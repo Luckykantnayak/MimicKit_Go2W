@@ -11,6 +11,7 @@ import util.torch_util as torch_util
 class DeepMimicEnv(char_env.CharEnv):
     def __init__(self, config, num_envs, device, visualize):
         env_config = config["env"]
+        self._cross_embodiment = env_config.get("cross_embodiment", False)
         self._enable_early_termination = env_config["enable_early_termination"]
         self._termination_height = env_config["termination_height"]
         self._num_phase_encoding = env_config.get("num_phase_encoding", 0)
@@ -39,6 +40,9 @@ class DeepMimicEnv(char_env.CharEnv):
         self._reward_key_pos_scale = env_config.get("reward_key_pos_scale")
         
         self._visualize_ref_char = env_config.get("visualize_ref_char", True)
+
+        self._wheel_indices = [3, 7, 11, 15]
+        self._leg_indices = [0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14]
         
         super().__init__(config=config, num_envs=num_envs, device=device,
                          visualize=visualize)
@@ -100,12 +104,14 @@ class DeepMimicEnv(char_env.CharEnv):
     def _load_motions(self, motion_file):
         self._motion_lib = motion_lib.MotionLib(motion_file=motion_file, 
                                                 kin_char_model=self._kin_char_model,
-                                                device=self._device)
+                                                device=self._device,
+                                                cross_embodiment=self._cross_embodiment)
         return
     
     def _parse_joint_err_weights(self, joint_err_w):
         num_joints = self._kin_char_model.get_num_joints()
-
+        
+        print("Number of joints in kin model: ", num_joints)
         if (joint_err_w is None):
             self._joint_err_w = torch.ones(num_joints - 1, device=self._device, dtype=torch.float32)
         else:
@@ -115,14 +121,15 @@ class DeepMimicEnv(char_env.CharEnv):
         
         dof_size = self._kin_char_model.get_dof_size()
         self._dof_err_w = torch.zeros(dof_size, device=self._device, dtype=torch.float32)
-
+        print("Dof size: ", dof_size)
         for j in range(1, num_joints):
             dof_dim = self._kin_char_model.get_joint_dof_dim(j)
             if (dof_dim > 0):
                 curr_w = self._joint_err_w[j - 1]
                 dof_idx = self._kin_char_model.get_joint_dof_idx(j)
                 self._dof_err_w[dof_idx:dof_idx + dof_dim] = curr_w
-
+        print("Joint error weights: ", self._joint_err_w)
+        print("Dof error weights: ", self._dof_err_w)
         return
     
     def _enable_ref_char(self):

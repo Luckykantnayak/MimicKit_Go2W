@@ -840,6 +840,10 @@ class IsaacGymEngine(engine.Engine):
         dof_pos = self._dof_state[..., :, 0]
         dof_vel = self._dof_state[..., :, 1]
         tar_dof = self._get_dof_cmd_buf()
-
+        
+        # PD control law for wheeled robots
+        dof_pos[..., [3, 7, 11, 15]] = 0.0  # reset wheel pos to zero
+        dof_vel[..., [3, 7, 11, 15]] = 0.0  # reset wheel velocity to zero
+        # For leg joint use position law but in wheel joint use only torque
         torque = self._kp_raw * (tar_dof - dof_pos) - self._kd_raw * dof_vel
         return torque
