@@ -57,7 +57,7 @@ class CharEnv(sim_env.SimEnv):
         self._parse_init_pose(init_pose, self._device)
         
         self._char_ids = []
-        
+
         for e in range(num_envs):
             Logger.print("Building {:d}/{:d} envs".format(e + 1, num_envs), end='\r')
             env_id = self._engine.create_env()
@@ -68,6 +68,7 @@ class CharEnv(sim_env.SimEnv):
         return
     
     def _build_env(self, env_id, config):
+
         char_col = self._get_char_color()
         char_id = self._build_character(env_id, config, color=char_col)
 
@@ -80,6 +81,7 @@ class CharEnv(sim_env.SimEnv):
         return 
     
     def _build_character(self, env_id, config, color=None):
+
         char_file = config["env"]["char_file"]
         char_id = self._engine.create_actor(env_id=env_id, 
                                              asset_file=char_file, 
@@ -123,6 +125,7 @@ class CharEnv(sim_env.SimEnv):
         elif (control_mode == engine.ControlMode.torque):
             char_id = self._get_char_id()
             torque_lim = self._engine.get_actor_torque_lim(0, char_id)
+            print("Torque Lim  Action Bound : ", torque_lim)
             low, high = self._build_action_bounds_torque(torque_lim)
 
         elif (control_mode == engine.ControlMode.pos
@@ -140,7 +143,7 @@ class CharEnv(sim_env.SimEnv):
             for j in range(1, num_joints):
                 j_dim = self._kin_char_model.get_joint_dof_dim(j)
                 assert(j_dim <= 1), "pd_1d only supports 1D joints"
-
+        
         action_space = spaces.Box(low=low, high=high)
         return action_space
     
@@ -193,7 +196,8 @@ class CharEnv(sim_env.SimEnv):
 
                 curr_joint.set_joint_dof(curr_low, low)
                 curr_joint.set_joint_dof(curr_high, high)
-
+        print("Pos Low : ", low)
+        print("Pos High : ", high)
         return low, high
 
     def _build_action_bounds_vel(self):

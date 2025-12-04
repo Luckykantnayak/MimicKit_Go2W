@@ -167,7 +167,7 @@ class KinCharModel():
             return body_index
 
         _add_xml_body(xml_body_root, -1, 0, default_joint_type)
-
+        print(body_names)
         self.init(body_names=body_names,
                   parent_indices=parent_indices,
                   local_translation=local_translation,
@@ -446,21 +446,21 @@ class KinCharModel():
     
     def output_xml(self, output_file):
         xml_template = """<mujoco model="character">
-    <default>
-        <motor ctrlrange="-1 1" ctrllimited="true"/>
-        <default class="body">
-            <geom condim="1" friction="1.0 0.05 0.05" solimp=".9 .99 .003" solref=".015 1"/>
-            <joint limited="true" solimplimit="0 .99 .01"/>
+        <default>
+            <motor ctrlrange="-1 1" ctrllimited="true"/>
+            <default class="body">
+                <geom condim="1" friction="1.0 0.05 0.05" solimp=".9 .99 .003" solref=".015 1"/>
+                <joint limited="true" solimplimit="0 .99 .01"/>
+            </default>
         </default>
-    </default>
 
-    <worldbody>
-{:s}
-    </worldbody>
+        <worldbody>
+    {:s}
+        </worldbody>
 
-    <actuator>{:s}
-    </actuator>
-</mujoco>"""
+        <actuator>{:s}
+        </actuator>
+    </mujoco>"""
 
         bodies_xml = self._build_bodies_xml()
         actuator_xml = self._build_actuators_xml()

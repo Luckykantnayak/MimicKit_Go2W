@@ -519,6 +519,7 @@ class IsaacGymEngine(engine.Engine):
 
         if (self._control_mode == engine.ControlMode.torque):
             cmd_buf = self._get_dof_cmd_buf()
+            cmd_buf[..., [3, 7, 11, 15]] = 0.0  # reset wheel pos to zero
             self._set_actuation_torque(cmd_buf)
 
         elif (self._control_mode == engine.ControlMode.pd_1d):
@@ -784,6 +785,9 @@ class IsaacGymEngine(engine.Engine):
 
             dof_idx0 = dof_idx1
 
+        print("Dof KP : ",self._actor_kp[0][0,:] )
+        print("Dof KD : ",self._actor_kd[0][0,:] )
+        print("Dof Torq : ",self._actor_torque_lim[0][0,:] )
         return
     
     def _build_actor_dof_dims(self):
@@ -837,9 +841,16 @@ class IsaacGymEngine(engine.Engine):
         return self._dof_cmd_raw
     
     def _calc_pd_1d_torque(self):
+        # print("Using PD Control")
         dof_pos = self._dof_state[..., :, 0]
         dof_vel = self._dof_state[..., :, 1]
         tar_dof = self._get_dof_cmd_buf()
-
+        
+        # print("Wheels Pos : ", dof_pos[0, [3, 7, 11, 15]])
+        # print("Wheels Vel : ", dof_vel[0, [3, 7, 11, 15]])
+        # PD control law for wheeled robots
+        dof_pos[..., [3, 7, 11, 15]] = 0.0  # reset wheel pos to zero
+        dof_vel[..., [3, 7, 11, 15]] = 0.0  # reset wheel velocity to zero
+        # For leg joint use position law but in wheel joint use only torque
         torque = self._kp_raw * (tar_dof - dof_pos) - self._kd_raw * dof_vel
         return torque
