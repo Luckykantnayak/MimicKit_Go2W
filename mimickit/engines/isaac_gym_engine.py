@@ -601,7 +601,7 @@ class IsaacGymEngine(engine.Engine):
         sim_params.physx.max_depenetration_velocity = 10.0
         sim_params.physx.default_buffer_size_multiplier = 10.0
         sim_params.physx.num_subscenes = 0
-        sim_params.physx.max_gpu_contact_pairs = 8 * 1024 * 1024
+        sim_params.physx.max_gpu_contact_pairs = 20 * 1024 * 1024
         
         sim_params.flex.num_inner_iterations = 10
         sim_params.flex.warm_start = 0.25
