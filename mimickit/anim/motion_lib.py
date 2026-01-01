@@ -14,11 +14,10 @@ def extract_pose_data(frame):
     return root_pos, root_rot, joint_dof
 
 class MotionLib():
-    def __init__(self, motion_file, kin_char_model, device, cross_embodiment=False):
+    def __init__(self, motion_file, kin_char_model, device):
         self._device = device
         self._kin_char_model = kin_char_model
-        self._cross_embodiment = cross_embodiment
-        self._load_motions(motion_file, cross_embodiment=cross_embodiment)
+        self._load_motions(motion_file)
         return
 
     def get_num_motions(self):
@@ -140,8 +139,8 @@ class MotionLib():
         return root_pos_offset
     
 
-    def _load_motions(self, motion_file, cross_embodiment=False):
-        self._load_motion_pkl(motion_file, cross_embodiment=cross_embodiment)
+    def _load_motions(self, motion_file):
+        self._load_motion_pkl(motion_file)
         
         num_motions = self.get_num_motions()
         total_len = self.get_total_length()
@@ -149,7 +148,7 @@ class MotionLib():
         Logger.print("Loaded {:d} motions with a total length of {:.3f}s.".format(num_motions, total_len))
         return
 
-    def _load_motion_pkl(self, motion_file, cross_embodiment=False):
+    def _load_motion_pkl(self, motion_file):
         self._motion_weights = []
         self._motion_fps = []
         self._motion_dt = []
@@ -214,14 +213,8 @@ class MotionLib():
             self._frame_root_rot.append(root_rot)
             self._frame_root_vel.append(root_vel)
             self._frame_root_ang_vel.append(root_ang_vel)
-            if cross_embodiment:
-                joint_rot_padded =  np.array([joint_rot[0:3], 0, joint_rot[3:6], 0, joint_rot[6:9], 0, joint_rot[9:]])
-                dof_vel_padded =  np.array([dof_vel[0:3], 0, dof_vel[3:6], 0, dof_vel[6:9], 0, dof_vel[9:]])
-                self._frame_joint_rot.append(joint_rot_padded)
-                self._frame_dof_vel.append(dof_vel_padded)
-            else:
-                self._frame_joint_rot.append(joint_rot)
-                self._frame_dof_vel.append(dof_vel)
+            self._frame_joint_rot.append(joint_rot)
+            self._frame_dof_vel.append(dof_vel)
 
 
         self._motion_weights = torch.tensor(self._motion_weights, dtype=torch.float32, device=self._device)

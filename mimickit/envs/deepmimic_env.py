@@ -11,7 +11,6 @@ import util.torch_util as torch_util
 class DeepMimicEnv(char_env.CharEnv):
     def __init__(self, config, num_envs, device, visualize):
         env_config = config["env"]
-        self._cross_embodiment = env_config.get("cross_embodiment", False)
         self._enable_early_termination = env_config["enable_early_termination"]
         self._termination_height = env_config["termination_height"]
         self._num_phase_encoding = env_config.get("num_phase_encoding", 0)
@@ -104,8 +103,7 @@ class DeepMimicEnv(char_env.CharEnv):
     def _load_motions(self, motion_file):
         self._motion_lib = motion_lib.MotionLib(motion_file=motion_file, 
                                                 kin_char_model=self._kin_char_model,
-                                                device=self._device,
-                                                cross_embodiment=self._cross_embodiment)
+                                                device=self._device)
         return
     
     def _parse_joint_err_weights(self, joint_err_w):

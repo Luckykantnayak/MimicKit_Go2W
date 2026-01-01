@@ -34,7 +34,7 @@ Download assets and motion data from [here](https://1sfu-my.sharepoint.com/:u:/g
 
 To train a model, run the following command:
 ```
-python mimickit/run.py --mode train --num_envs 4096 --env_config data/envs/deepmimic_humanoid_env.yaml --agent_config data/agents/deepmimic_humanoid_ppo_agent.yaml --visualize true --log_file output/log.txt --out_model_file output/model.pt
+python mimickit/run.py --mode train --num_envs 4096 --env_config data/envs/deepmimic_go2w_env.yaml --agent_config data/agents/deepmimic_go2w_ppo_agent.yaml --visualize true --log_file output/log.txt --out_model_file output/model.pt
 ```
 - `--mode` selects either `train` or `test` mode.
 - `--num_envs` specifies the number of parallel environments used for simulation.
@@ -47,7 +47,7 @@ python mimickit/run.py --mode train --num_envs 4096 --env_config data/envs/deepm
 
 Instead of specifying all arguments through the command line, arguments can also be loaded from an `arg_file`:
 ```
-python mimickit/run.py --arg_file args/deepmimic_humanoid_ppo_args.txt --visualize true
+python mimickit/run.py --arg_file args/deepmimic_go2w_ppo_args.txt --visualize true
 ```
 The arguments in `arg_file` are treated the same as command line arguments. Arguments for all algorithms are provided in [`args/`](args/).
 
@@ -56,7 +56,7 @@ The arguments in `arg_file` are treated the same as command line arguments. Argu
 
 To test a model, run the following command:
 ```
-python mimickit/run.py --arg_file args/deepmimic_humanoid_ppo_args.txt --num_envs 4 --visualize true --mode test --model_file data/models/deepmimic_humanoid_spinkick_model.pt
+python mimickit/run.py --arg_file args/deepmimic_go2w_ppo_args.txt --num_envs 4 --visualize true --mode test --model_file data/models/deepmimic_go2w_spinkick_model.pt
 ```
 - `--model_file` specifies the `.pt` file that contains the parameters of the trained model. Pretrained models are available in [`data/models/`](data/models/), and the corresponding training log files are available in [`data/logs/`](data/logs/).
 
@@ -65,7 +65,7 @@ python mimickit/run.py --arg_file args/deepmimic_humanoid_ppo_args.txt --num_env
 
 To use distributed training with multi-CPU or multi-GPU:
 ```
-python mimickit/run.py --arg_file args/deepmimic_humanoid_ppo_args.txt --num_workers 2 --device cuda:0
+python mimickit/run.py --arg_file args/deepmimic_go2w_ppo_args.txt --num_workers 2 --device cuda:0
 ```
 - `--num_workers` specifies the number of worker processes used to parallelize training. 
 - `--device` specifies the device used for training, which can be `cpu` or `cuda:0`. When training with multiple GPUs, the number of worker processes used to parallelize training must be less than or equal to the number of GPUs available on the system.
@@ -85,7 +85,7 @@ Motion data is stored in [`data/motions/`](data/motions/). The `motion_file` fie
 
 The `view_motion` environment can be used to visualize motion clips:
 ```
-python mimickit/run.py --mode test --arg_file args/view_motion_humanoid_args.txt --visualize true
+python mimickit/run.py --mode test --arg_file args/view_motion_go2w_args.txt --visualize true
 ```
 
 Motion clips are represented by the `Motion` class implemented in [`motion.py`](mimickit/anim/motion.py). Each motion clip is stored in a `.pkl` file. Each frame in a motion specifies the pose of the character according to
@@ -99,8 +99,6 @@ where 3D rotations are specified using 3D exponential maps. Joint rotations are 
 The rotations of 3D joints are represented using 3D exponential maps, and the rotations of 1D joints are represented using 1D rotation angles.
 
 
-## Motion Retargeting
-Motion retargeting can be done using [GMR](https://github.com/YanjieZe/GMR). A script to convert GMR files to the MimicKit format is available in [`tools/gmr_to_mimickit/`](tools/gmr_to_mimickit/).
 
 ---
 
