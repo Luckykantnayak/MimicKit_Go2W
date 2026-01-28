@@ -4,6 +4,7 @@ env:
     char_file: "data/assets/go2w/go2w_mimickit_style.xml"
     camera_mode: "track"
     
+    visualize_ref_char: False
     cross_embodiment: False
     episode_length: 10.0 # seconds
     global_obs: True
@@ -24,7 +25,7 @@ env:
     key_bodies: ["FR_wheel_link", "FL_wheel_link", "RR_wheel_link", "RL_wheel_link"]
     contact_bodies: ["FR_wheel_link", "FL_wheel_link", "RR_wheel_link", "RL_wheel_link"]
     
-    motion_file: "data/motions/go2w/go2w_handstand_skating_gait_mimickit.pkl"
+    motion_file: "data/motions/keyframe/go2w_aerialcrossover_mimickit.pkl"
     # motion_file: "data/motions/go2w/go2w_walking_gait_mimickit.pkl"
     
     joint_err_w: [1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0]
@@ -50,3 +51,11 @@ engine:
     sim_freq: 60
     sim_substeps: 2 # 120 Hz
     env_spacing: 5
+
+    env_id : 0 # Environment ID to record
+    num_steps : 100 # Number of steps to record
+    skill_name : "simulation" # Name of the skill being performed
+    fps : 10 # Frames per second for the video
+    camera_offset : [0.0, -3.0, 0.5] # Camera offset relative to robot
+    camera_look_offset : [0.0, 0.0, 0.5] # Look-at point offset relative to robot
+    resolution : [1920, 1080] # Video resolution

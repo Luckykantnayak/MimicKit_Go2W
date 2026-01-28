@@ -8,11 +8,14 @@ import re
 import sys
 import torch
 import time
+import cv2
+from pathlib import Path
 
 import engines.engine as engine
 
 class IsaacGymEngine(engine.Engine):
-    def __init__(self, config, num_envs, device, visualize, control_mode=None):
+    def __init__(self, config, num_envs, device, visualize, control_mode=None, 
+                 record_on_start=True, record_config=None):
         super().__init__()
         physics_engine = gymapi.SimType.SIM_PHYSX
 
@@ -51,6 +54,28 @@ class IsaacGymEngine(engine.Engine):
         
         self._build_ground_plane()
 
+        # Video capture state
+        self._video_writer = None
+        self._is_recording = True
+        self._record_env_id = 0
+        self._record_steps_remaining = 0
+        self._record_skill_name = "default"
+        self._record_fps = 30
+        self._media_dir = "media"
+        
+        # Camera following parameters
+        self._camera_offset = np.array([0.0, -3.0, 0.5])  # Camera offset relative to robot
+        self._camera_look_offset = np.array([0.0, 0.0, 0.5])  # Look-at point offset relative to robot
+        self._camera_smoothing = 0.1  # Lower = smoother, higher = more responsive
+        self._current_camera_pos = None
+        self._current_camera_target = None
+        
+        # Auto-recording on start configuration
+        self._record_on_start = record_on_start
+        record_config = { 'env_id': config['env_id'], 'num_steps': config['num_steps'], 'skill_name': config['skill_name'], 'fps': config['fps'], 'camera_offset': config['camera_offset'], 'camera_look_offset': config['camera_look_offset'], 'resolution': config['resolution'] } 
+        self._record_config = record_config if record_config is not None else {}
+        self._recording_started = False  # Track if auto-recording has been triggered
+
         if (visualize):
             self._build_viewer()
             self._prev_frame_time = 0.0
@@ -73,6 +98,9 @@ class IsaacGymEngine(engine.Engine):
     def finalize_sim(self):
         self._gym.prepare_sim(self._sim)
         self._build_sim_tensors()
+        
+        # Create camera sensor for video recording
+        self._setup_camera_sensor()
         return
     
     def step(self):
@@ -83,6 +111,217 @@ class IsaacGymEngine(engine.Engine):
             self._sim_step()
             
         self._refresh_sim_tensors()
+        
+        # Auto-start recording on first step if configured
+        if self._record_on_start and not self._recording_started:
+            self._recording_started = True
+            
+            # Extract config parameters with defaults
+            env_id = self._record_config.get('env_id', 0)
+            num_steps = self._record_config.get('num_steps', 200)
+            skill_name = self._record_config.get('skill_name', 'simulation')
+            fps = self._record_config.get('fps', 10)
+            camera_offset = self._record_config.get('camera_offset', None)
+            camera_look_offset = self._record_config.get('camera_look_offset', None)
+            resolution = self._record_config.get('resolution', (1920, 1080))
+            
+            print(f"\n{'='*60}")
+            print(f"AUTO-STARTING VIDEO RECORDING")
+            print(f"{'='*60}")
+            
+            self.start_video_recording(
+                env_id=env_id,
+                num_steps=num_steps,
+                skill_name=skill_name,
+                fps=fps,
+                camera_offset=camera_offset,
+                camera_look_offset=camera_look_offset,
+                resolution=resolution
+            )
+        
+        # Handle video recording
+        if self._is_recording:
+            self._capture_video_frame()
+            self._record_steps_remaining -= 1
+            
+            if self._record_steps_remaining <= 0:
+                self.stop_video_recording()
+        
+        return
+
+    def start_video_recording(self, env_id=0, num_steps=1000, skill_name="skill", 
+                             fps=30, camera_offset=None, camera_look_offset=None,
+                             resolution=(1920, 1080)):
+        """
+        Start recording video of the simulation.
+        
+        Args:
+            env_id: Environment to focus on (default: 0)
+            num_steps: Number of simulation steps to record
+            skill_name: Name for the video file
+            fps: Frames per second for the video
+            camera_offset: [x, y, z] offset from robot for camera position
+            camera_look_offset: [x, y, z] offset from robot for look-at point
+            resolution: (width, height) tuple for video resolution
+        """
+        if self._is_recording:
+            print("Warning: Already recording. Stopping previous recording.")
+            self.stop_video_recording()
+        
+        # Set parameters
+        self._record_env_id = env_id
+        self._record_steps_remaining = num_steps
+        self._record_skill_name = skill_name
+        self._record_fps = fps
+        
+        if camera_offset is not None:
+            self._camera_offset = np.array(camera_offset)
+        if camera_look_offset is not None:
+            self._camera_look_offset = np.array(camera_look_offset)
+        
+        # Create media directory
+        os.makedirs(self._media_dir, exist_ok=True)
+        
+        # Generate filename with timestamp
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        video_filename = f"{self._media_dir}/{skill_name}_{timestamp}.mp4"
+        
+        # Initialize video writer
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        self._video_writer = cv2.VideoWriter(
+            video_filename, 
+            fourcc, 
+            fps, 
+            resolution
+        )
+        
+        if not self._video_writer.isOpened():
+            print(f"Error: Could not open video writer for {video_filename}")
+            self._video_writer = None
+            return False
+        
+        self._is_recording = True
+        self._current_camera_pos = None  # Reset for smooth start
+        self._current_camera_target = None
+        
+        print(f"Started recording video: {video_filename}")
+        print(f"Recording {num_steps} steps at {fps} FPS (~{num_steps/fps:.1f} seconds)")
+        
+        return True
+    
+    def stop_video_recording(self):
+        """Stop recording and save the video file."""
+        if not self._is_recording:
+            return
+        
+        self._is_recording = False
+        
+        if self._video_writer is not None:
+            self._video_writer.release()
+            print(f"Video recording stopped and saved.")
+            self._video_writer = None
+        
+        self._record_steps_remaining = 0
+        return
+    
+    def _setup_camera_sensor(self):
+        """Setup offscreen camera for video capture."""
+        camera_props = gymapi.CameraProperties()
+        camera_props.width = 1920
+        camera_props.height = 1080
+        camera_props.enable_tensors = True
+        
+        env_ptr = self.get_env(self._record_env_id)
+        self._camera_handle = self._gym.create_camera_sensor(env_ptr, camera_props)
+        
+        return
+    
+    def _update_camera_follow_robot(self):
+        """Update camera to follow the robot in the recorded environment."""
+        # Get robot position (assuming actor 0 is the robot)
+        robot_pos = self.get_root_pos(0)[self._record_env_id].cpu().numpy()
+        
+        # Calculate desired camera position and target
+        desired_cam_pos = robot_pos + self._camera_offset
+        desired_cam_target = robot_pos + self._camera_look_offset
+        
+        # Smooth camera movement
+        if self._current_camera_pos is None:
+            self._current_camera_pos = desired_cam_pos
+            self._current_camera_target = desired_cam_target
+        else:
+            alpha = self._camera_smoothing
+            self._current_camera_pos = (1 - alpha) * self._current_camera_pos + alpha * desired_cam_pos
+            self._current_camera_target = (1 - alpha) * self._current_camera_target + alpha * desired_cam_target
+        
+        # Set camera transform
+        cam_pos = gymapi.Vec3(
+            self._current_camera_pos[0],
+            self._current_camera_pos[1],
+            self._current_camera_pos[2]
+        )
+        cam_target = gymapi.Vec3(
+            self._current_camera_target[0],
+            self._current_camera_target[1],
+            self._current_camera_target[2]
+        )
+        
+        env_ptr = self.get_env(self._record_env_id)
+        self._gym.set_camera_location(
+            self._camera_handle,
+            env_ptr,
+            cam_pos,
+            cam_target
+        )
+        
+        return
+    
+    def _capture_video_frame(self):
+        """Capture a frame from the camera and write to video."""
+        if self._video_writer is None:
+            return
+        
+        # Update camera to follow robot
+        self._update_camera_follow_robot()
+        
+        # Render the scene
+        self._gym.fetch_results(self._sim, True)
+        self._gym.step_graphics(self._sim)
+        self._gym.render_all_camera_sensors(self._sim)
+        
+        # Get camera image
+        env_ptr = self.get_env(self._record_env_id)
+        img = self._gym.get_camera_image(
+            self._sim,
+            env_ptr,
+            self._camera_handle,
+            gymapi.IMAGE_COLOR
+        )
+        
+        # Convert to numpy array and reshape
+        img = img.reshape((1080, 1920, 4))  # RGBA
+        img_bgr = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
+        
+        # Write frame
+        self._video_writer.write(img_bgr)
+        
+        return
+    
+    def set_video_camera_params(self, offset=None, look_offset=None, smoothing=None):
+        """
+        Update camera following parameters.
+        
+        Args:
+            offset: [x, y, z] camera position offset from robot
+            look_offset: [x, y, z] look-at position offset from robot
+            smoothing: Camera smoothing factor (0.0-1.0)
+        """
+        if offset is not None:
+            self._camera_offset = np.array(offset)
+        if look_offset is not None:
+            self._camera_look_offset = np.array(look_offset)
+        if smoothing is not None:
+            self._camera_smoothing = np.clip(smoothing, 0.0, 1.0)
         return
 
     def update_sim_state(self):
@@ -112,7 +351,8 @@ class IsaacGymEngine(engine.Engine):
         return
     
     def create_actor(self, env_id, asset_file, name, is_visual=False, enable_self_collisions=True, 
-                     fix_base=False, start_pos=None, start_rot=None, color=None, disable_motors=False):
+                     fix_base=False, start_pos=None, start_rot=None, color=None, disable_motors=False,
+                     glossy=True):  # Added glossy parameter
         segmentation_id = 0
 
         start_pose = gymapi.Transform()
@@ -175,10 +415,26 @@ class IsaacGymEngine(engine.Engine):
 
         self._gym.set_actor_dof_properties(env_ptr, actor_id, dof_props)
 
-        if (color is not None):
+        # Apply glossy appearance to robot bodies
+        if (color is not None or glossy):
             num_bodies = self._gym.get_actor_rigid_body_count(env_ptr, actor_id)
             for b in range(num_bodies):
-                self.set_rigid_body_color(env_id, actor_id, b, color)
+                if color is not None:
+                    # If color is provided, make it glossy by brightening it slightly
+                    if glossy:
+                        glossy_color = [min(c * 1.2, 1.0) for c in color]
+                        self.set_rigid_body_color(env_id, actor_id, b, glossy_color)
+                    else:
+                        self.set_rigid_body_color(env_id, actor_id, b, color)
+                elif glossy:
+                    # Apply a nice glossy metallic color (polished metal look)
+                    glossy_colors = [
+                        [0.7, 0.7, 0.8],   # Silver/Chrome
+                        [0.8, 0.75, 0.7],  # Brushed aluminum
+                        [0.6, 0.65, 0.75], # Blue metallic
+                    ]
+                    body_color = glossy_colors[b % len(glossy_colors)]
+                    self.set_rigid_body_color(env_id, actor_id, b, body_color)
 
         return actor_id
         
@@ -465,6 +721,8 @@ class IsaacGymEngine(engine.Engine):
     def _build_ground_plane(self):
         plane_params = gymapi.PlaneParams()
         plane_params.normal = gymapi.Vec3(0.0, 0.0, 1.0)
+        
+        # Enhanced friction for better contact
         plane_params.static_friction = 1.0
         plane_params.dynamic_friction = 1.0
         plane_params.restitution = 0.0
