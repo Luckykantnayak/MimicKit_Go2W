@@ -1,31 +1,27 @@
-env_name: "add"
+env_name: "amp"
 
 env:
-    char_file: "data/assets/go2/go2.xml"
+    char_file: "data/assets/go2w/go2w_mimickit_style.xml"
     camera_mode: "track"
 
     episode_length: 10.0 # seconds
     global_obs: True
     root_height_obs: True
-    pose_termination: True
-    pose_termination_dist: 0.5 # m
+    pose_termination: False
     enable_phase_obs: False
-    enable_tar_obs: True
-    num_phase_encoding: 4
-    tar_obs_steps: [1, 2, 3]
-    num_disc_obs_steps: 1
+    enable_tar_obs: False
+    num_disc_obs_steps: 10
     rand_reset: True
-    log_tracking_error: True
 
     ref_char_offset: [2.0, 0.0, 0.0] # m
     init_pose: [0, 0, 0.27, 0, 0, 0, 0, 0.9, -1.8, 0, 0.9, -1.8, 0, 0.9, -1.8, 0, 0.9, -1.8]
 
     enable_early_termination: True
     termination_height: 0.15
-    key_bodies: ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
-    contact_bodies: ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
+    key_bodies: ["FR_wheel_link", "FL_wheel_link", "RR_wheel_link", "RL_wheel_link"]
+    contact_bodies: ["FR_wheel_link", "FL_wheel_link", "RR_wheel_link", "RL_wheel_link"]
     
-    motion_file: "data/motions/go2/SKILL_TROT_WALK.pkl"
+    motion_file: "data/motions/go2w/skill7.pkl"
 
     reward_pose_w: 0.5
     reward_vel_w: 0.1
@@ -48,5 +44,3 @@ engine:
     sim_freq: 60
     sim_substeps: 2 # 120 Hz
     env_spacing: 5
-
-

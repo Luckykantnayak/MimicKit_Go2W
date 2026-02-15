@@ -3,5 +3,5 @@
 --env_config data/envs/add_go2_env.yaml
 --agent_config data/agents/add_go2_agent.yaml
 
---log_file output/log.txt
---out_model_file output/model.pt
+--log_file output/add/go2/TROT/log.txt
+--out_model_file output/add/go2/TROT/model.pt

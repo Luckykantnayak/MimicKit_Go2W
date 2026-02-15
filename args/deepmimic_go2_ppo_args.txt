@@ -3,5 +3,5 @@
 --env_config data/envs/deepmimic_go2_env.yaml
 --agent_config data/agents/deepmimic_go2_ppo_agent.yaml
 
---log_file output/log.txt
---out_model_file output/model.pt
+--log_file output/deepmimic/go2_keyframes/walking/log.txt
+--out_model_file output/deepmimic/go2_keyframes/walking/model.pt

@@ -24,15 +24,16 @@ env:
     key_bodies: ["FR_wheel_link", "FL_wheel_link", "RR_wheel_link", "RL_wheel_link"]
     contact_bodies: ["FR_wheel_link", "FL_wheel_link", "RR_wheel_link", "RL_wheel_link"]
     
-    motion_file: "data/motions/go2w/go2w_sideleg_parallel_skating_gait_mimickit.pkl"
+    #motion_file: "data/motions/go2w/SKILL_180_TWIST_JUMP.pkl"
+    motion_file: "data/motions/keyframe_3/go2w_frontflip_hq_mimickit.pkl"
     
     joint_err_w: [1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0]
 
-    reward_pose_w: 0.5
+    reward_pose_w: 0.2 #0.5
     reward_vel_w: 0.1
-    reward_root_pose_w: 0.15
+    reward_root_pose_w: 0.05 #0.15
     reward_root_vel_w: 0.1
-    reward_key_pos_w: 0.5
+    reward_key_pos_w: 1 #0.5
 
     reward_pose_scale: 0.25
     reward_vel_scale: 0.01

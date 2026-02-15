@@ -23,7 +23,7 @@ env:
     key_bodies: ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
     contact_bodies: ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
     
-    motion_file: "data/motions/go2/go2_pace.pkl"
+    motion_file: "data/motions/keyframe/go2_walking_mimickit.pkl"
     
     joint_err_w: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 

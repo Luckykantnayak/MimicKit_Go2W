@@ -21,7 +21,7 @@ env:
     key_bodies: ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
     contact_bodies: ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
     
-    motion_file: "data/motions/go2/go2_pace.pkl"
+    motion_file: "data/motions/go2/SKILL_TROT_WALK.pkl"
 
     reward_pose_w: 0.5
     reward_vel_w: 0.1

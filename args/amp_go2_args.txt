@@ -1,7 +1,7 @@
---num_envs 4096
+--num_envs 2048
 
 --env_config data/envs/amp_go2_env.yaml
 --agent_config data/agents/amp_go2_agent.yaml
 
---log_file output/log.txt
---out_model_file output/model.pt
+--log_file output/amp/go2/TROT/log.txt
+--out_model_file output/amp/go2/TROT/model.pt

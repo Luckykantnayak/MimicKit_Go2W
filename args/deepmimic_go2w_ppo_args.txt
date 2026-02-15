@@ -3,5 +3,5 @@
 --env_config data/envs/deepmimic_go2w_env.yaml
 --agent_config data/agents/deepmimic_go2w_ppo_agent.yaml
 
---log_file output/deepmimic/go2w/skating/test1_no_torq/log.txt
---out_model_file output/deepmimic/go2w/skating/sideleg/model.pt
+--log_file output/deepmimic/hq_go2w_keyframes/frontflip/log.txt
+--out_model_file output/deepmimic/hq_go2w_keyframes/frontflip/model.pt
